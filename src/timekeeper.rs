@@ -10,8 +10,8 @@ unsafe extern "C" fn timebase_callback (
 ) {
     let arg_raw_str = std::ffi::CStr::from_ptr(arg as *mut c_char);
 
-    let mut numerator = 0;
-    let mut denominator = 0;
+    let mut numerator = 0.0;
+    let mut denominator = 0.0;
     let mut tempo = 0.0;
     
     if let Ok(s) = arg_raw_str.to_str(){
@@ -29,6 +29,9 @@ unsafe extern "C" fn timebase_callback (
 
 	
     if new_pos != 0 {
+	(*pos).beats_per_bar = numerator;
+	(*pos).beat_type = denominator;
+	(*pos).beats_per_minute = tempo;
     }
     ()
 }
