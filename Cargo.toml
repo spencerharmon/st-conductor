@@ -1,0 +1,11 @@
+[package]
+name = "st-conductor"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+jack = { git = "https://github.com/RustAudio/rust-jack", branch = "main" }
+clap = { version = "3.2.21", features = ["derive"] }
+libc = "0.2"
