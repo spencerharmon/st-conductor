@@ -1,5 +1,7 @@
 mod timekeeper;
 
+use std::{thread, time};
+
 use clap::Parser;
 #[derive(Parser)]
 struct Cli {
@@ -13,5 +15,9 @@ fn main() {
     println!("Time signature: {} / {}", cli.numerator, cli.denominator);
     println!("Tempo: {}", cli.tempo);
     let tk = timekeeper::Timekeeper::new(cli.numerator, cli.denominator, cli.tempo);
-    tk.run();
+    tk.start();
+    let dur = time::Duration::from_millis(100);
+    loop {
+        thread::sleep(dur);
+    }
 }
