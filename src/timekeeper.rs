@@ -29,9 +29,12 @@ unsafe extern "C" fn timebase_callback (
 	(*pos).beats_per_bar = numerator;
 	(*pos).beat_type = denominator;
 	(*pos).beats_per_minute = tempo;
-	(*pos).bar = (*pos).bar; 
-	(*pos).beat = (*pos).beat; 
-	(*pos).tick = (*pos).tick; 
+//	(*pos).bar = (*pos).bar; 
+//	(*pos).beat = (*pos).beat; 
+//	(*pos).tick = (*pos).tick; 
+	(*pos).bar = 0; 
+	(*pos).beat = 0; 
+	(*pos).tick = 0; 
 	    
     } else {
     match state {

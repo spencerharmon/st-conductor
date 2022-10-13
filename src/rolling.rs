@@ -17,26 +17,27 @@ pub unsafe fn jack_transport_rolling(
     let beats_per_bar = (*pos).beats_per_bar; 
     let bar = (*pos).bar; 
     let beat = (*pos).beat; 
-    let tick = (*pos).tick; 
+    let tick = (*pos).tick;
+    println!("{}", bar);
 
     let frames_per_minute = (*pos).frame_rate * 60; 
     let frames_per_beat =  frames_per_minute as f64 / tempo;
     
-    let absolute_beat = (beats_per_bar * bar as f32) + beat as f32;
+    let absolute_beat: u64 = (beats_per_bar as u64 * bar as u64) + beat as u64;
 
-    let this_beat_frame = absolute_beat as f64 * frames_per_beat;
-    let next_beat_frame = this_beat_frame as f64 + frames_per_beat;
+    let this_beat_frame: u64 = absolute_beat as u64 * frames_per_beat as u64;
+    let next_beat_frame: u64 = this_beat_frame + frames_per_beat as u64;
 
 
     let start_frame =  (*pos).frame;
-    let end_frame =  (*pos).frame + nframes;
+    let end_frame: u64 =  ((*pos).frame + nframes).into();
 
     println!("next: {:?} end: {:?}", next_beat_frame, end_frame);
-    if next_beat_frame > end_frame.into() {
+    if next_beat_frame > end_frame {
 	(*pos).bar = bar; 
 	(*pos).beat = beat;
-    } else if next_beat_frame <= end_frame.into() {
-	((*pos).beat, (*pos).bar) = get_incremented_bar_beat(bar, beat, beats_per_bar);
+    } else if next_beat_frame <= end_frame {
+	((*pos).bar, (*pos).beat) = get_incremented_bar_beat(bar, beat, beats_per_bar);
 	(*pos).tick = 0;
     }
 
@@ -44,8 +45,8 @@ pub unsafe fn jack_transport_rolling(
     (*pos).beats_per_bar = numerator;
     (*pos).beat_type = denominator;
     (*pos).beats_per_minute = tempo;
-    (*pos).tick = (*pos).tick+1;
-    (*pos).ticks_per_beat = 1920.0;
+    (*pos).tick = (*pos).tick + nframes as i32;
+    (*pos).ticks_per_beat = frames_per_beat;
     (*pos).beats_per_minute = tempo;
-    (*pos).frame = end_frame;
+    (*pos).frame = end_frame as u32;
 }
