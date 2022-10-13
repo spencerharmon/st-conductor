@@ -18,7 +18,6 @@ pub unsafe fn jack_transport_rolling(
     let bar = (*pos).bar; 
     let beat = (*pos).beat; 
     let tick = (*pos).tick;
-    println!("{}", bar);
 
     let frames_per_minute = (*pos).frame_rate * 60; 
     let frames_per_beat =  frames_per_minute as f64 / tempo;
@@ -32,21 +31,25 @@ pub unsafe fn jack_transport_rolling(
     let start_frame =  (*pos).frame;
     let end_frame: u64 =  ((*pos).frame + nframes).into();
 
-    println!("next: {:?} end: {:?}", next_beat_frame, end_frame);
+    let periods_per_beat = frames_per_beat as f64 / nframes as f64;
+    let ticks_per_period = 1920.0 / periods_per_beat;
     if next_beat_frame > end_frame {
 	(*pos).bar = bar; 
 	(*pos).beat = beat;
+	(*pos).tick= ((*pos).tick) + (ticks_per_period as i32)*2;
     } else if next_beat_frame <= end_frame {
+        println!("next: {:?} end: {:?}", next_beat_frame, end_frame);
 	((*pos).bar, (*pos).beat) = get_incremented_bar_beat(bar, beat, beats_per_bar);
 	(*pos).tick = 0;
+	println!("{:?}", periods_per_beat);
+	println!("{:?}", ticks_per_period);
     }
 
     (*pos).valid = j::JackPositionBBT | j::JackTransportBBT | j::JackTransportPosition | j::JackTransportState;
     (*pos).beats_per_bar = numerator;
     (*pos).beat_type = denominator;
     (*pos).beats_per_minute = tempo;
-    (*pos).tick = (*pos).tick + nframes as i32;
-    (*pos).ticks_per_beat = frames_per_beat;
+    (*pos).ticks_per_beat = 1920.0;
     (*pos).beats_per_minute = tempo;
     (*pos).frame = end_frame as u32;
 }

@@ -37,19 +37,18 @@ unsafe extern "C" fn timebase_callback (
 	(*pos).tick = 0; 
 	    
     } else {
-    match state {
-	j::JackTransportStopped => {
-	    println!("Stopped");
+	match state {
+	    j::JackTransportStopped => {
+		println!("Stopped");
+	    }
+	    j::JackTransportRolling => {
+		jack_transport_rolling(numerator, denominator, tempo, nframes, pos);
+	    }
+	    j::JackTransportStarting => {
+		println!("Starting");
+	    }
+	    _ => ()
 	}
-	j::JackTransportRolling => {
-	    jack_transport_rolling(numerator, denominator, tempo, nframes, pos);
-	}
-	j::JackTransportStarting => {
-	    println!("Starting");
-	}
-	_ => ()
-    }
-	println!("end cycle");
     }
     ()
 }
