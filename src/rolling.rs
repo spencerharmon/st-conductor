@@ -20,7 +20,7 @@ pub unsafe fn jack_transport_rolling(
     let tick = (*pos).tick;
 
     let frames_per_minute = (*pos).frame_rate * 60; 
-    let frames_per_beat =  frames_per_minute as f64 / tempo;
+    let frames_per_beat =  (frames_per_minute as f64 / tempo) * 2f64;
     
     let absolute_beat: u64 = (beats_per_bar as u64 * bar as u64) + beat as u64;
 
