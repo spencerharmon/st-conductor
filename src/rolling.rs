@@ -15,14 +15,14 @@ pub unsafe fn jack_transport_rolling(
     pos: *mut j::jack_position_t
 ) {
     let beats_per_bar = (*pos).beats_per_bar; 
-    let bar = (*pos).bar; 
+    let bar = (*pos).bar;
     let beat = (*pos).beat; 
     let tick = (*pos).tick;
 
     let frames_per_minute = (*pos).frame_rate * 60; 
     let frames_per_beat =  (frames_per_minute as f64 / tempo) * 2f64;
     
-    let absolute_beat: u64 = (beats_per_bar as u64 * bar as u64) + beat as u64;
+    let absolute_beat: u64 = (beats_per_bar as u64 * (bar as u64 - 1)) + beat as u64;
 
     let this_beat_frame: u64 = absolute_beat as u64 * frames_per_beat as u64;
     let next_beat_frame: u64 = this_beat_frame + frames_per_beat as u64;
@@ -45,7 +45,7 @@ pub unsafe fn jack_transport_rolling(
 	println!("{:?}", ticks_per_period);
     }
 
-    (*pos).valid = j::JackPositionBBT | j::JackTransportBBT | j::JackTransportPosition | j::JackTransportState;
+    (*pos).valid = j::JackPositionBBT | j::JackTransportPosition;
     (*pos).beats_per_bar = numerator;
     (*pos).beat_type = denominator;
     (*pos).beats_per_minute = tempo;

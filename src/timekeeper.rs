@@ -25,16 +25,16 @@ unsafe extern "C" fn timebase_callback (
 	    
     }
 
-    if new_pos != 0 {
+    if (*pos).frame == 0 {
 	(*pos).beats_per_bar = numerator;
 	(*pos).beat_type = denominator;
 	(*pos).beats_per_minute = tempo;
 //	(*pos).bar = (*pos).bar; 
 //	(*pos).beat = (*pos).beat; 
 //	(*pos).tick = (*pos).tick; 
-	(*pos).bar = 0; 
-	(*pos).beat = 0; 
-	(*pos).tick = 0; 
+	(*pos).bar = 1;
+	(*pos).beat = 0;
+	(*pos).tick = 0;
 	    
     } else {
 	match state {
@@ -80,7 +80,11 @@ impl Timekeeper {
     		cb,
     		arg
     	    );
-	    j::jack_transport_start(client.raw());
+   	    let mut pos = MaybeUninit::uninit().as_mut_ptr();
+	    j::jack_transport_query(client.raw(), pos);
+	    (*pos).frame = 0;
+	    j::jack_transport_reposition(client.raw(), pos);
+	    j::jack_transport_stop(client.raw());
 	}
 	let client_pointer = client.raw();
 	
@@ -94,10 +98,9 @@ impl Timekeeper {
 
 	let active_client = client.activate_async((), process).unwrap();
 	loop {
-	    let mut pos: MaybeUninit<j::jack_position_t> = MaybeUninit::uninit();
 	    unsafe {
-		let p = pos.as_mut_ptr();
-		j::jack_transport_query(client_pointer, p);
+   	        let mut pos = MaybeUninit::uninit().as_mut_ptr();
+		j::jack_transport_query(client_pointer, pos);
 	    }
 	}
     }
