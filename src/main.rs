@@ -1,9 +1,11 @@
+#![feature(strict_provenance)]
+
 mod timekeeper;
 mod rolling;
 
-use std::{thread, time};
-
+use tokio;
 use clap::Parser;
+
 #[derive(Parser)]
 struct Cli {
     numerator: u8,
@@ -11,14 +13,13 @@ struct Cli {
     tempo: u8,
 }
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let cli = Cli::parse();
     println!("Time signature: {} / {}", cli.numerator, cli.denominator);
     println!("Tempo: {}", cli.tempo);
+
     let tk = timekeeper::Timekeeper::new(cli.numerator, cli.denominator, cli.tempo);
     tk.start();
-    let dur = time::Duration::from_millis(100);
-    loop {
-        thread::sleep(dur);
-    }
+
 }

@@ -12,7 +12,9 @@ pub unsafe fn jack_transport_rolling(
     denominator: f32,
     tempo: f64,
     nframes: j::jack_nframes_t,
-    pos: *mut j::jack_position_t
+    pos: *mut j::jack_position_t,
+    dangerous_pointer: *mut u32
+	
 ) {
     let beats_per_bar = (*pos).beats_per_bar; 
     let bar = (*pos).bar;
@@ -26,6 +28,9 @@ pub unsafe fn jack_transport_rolling(
 
     let this_beat_frame: u64 = absolute_beat as u64 * frames_per_beat as u64;
     let next_beat_frame: u64 = this_beat_frame + frames_per_beat as u64;
+
+    *dangerous_pointer = next_beat_frame as u32;
+    
 
 
     let start_frame =  (*pos).frame;

@@ -1,7 +1,11 @@
 use jack::jack_sys as j;
+use st_sync;
 use ::libc::*;
 use crate::rolling::jack_transport_rolling;
 use std::mem::MaybeUninit;
+use crossbeam_channel::*;
+use std::ptr;
+use std::{thread, time};
 
 unsafe extern "C" fn timebase_callback (
     state: j::jack_transport_state_t,
@@ -15,6 +19,7 @@ unsafe extern "C" fn timebase_callback (
     let mut numerator = 0.0;
     let mut denominator = 0.0;
     let mut tempo = 0.0 as f64;
+    let mut dangerous_memory_address = 0 as usize;
     
     if let Ok(s) = arg_raw_str.to_str(){
         let mut arg_iter = s.split(" ");
@@ -22,8 +27,11 @@ unsafe extern "C" fn timebase_callback (
 	numerator = arg_iter.next().unwrap().parse().unwrap();
 	denominator = arg_iter.next().unwrap().parse().unwrap();
 	tempo = arg_iter.next().unwrap().parse().unwrap();
-	    
+	dangerous_memory_address = arg_iter.next().unwrap().parse().unwrap();
     }
+
+//    let dangerous_pointer = dangerous_memory_address as *mut u32;
+    let dangerous_pointer: *mut u32 = std::ptr::from_exposed_addr_mut(dangerous_memory_address);
 
     if (*pos).frame == 0 {
 	(*pos).beats_per_bar = numerator;
@@ -42,7 +50,7 @@ unsafe extern "C" fn timebase_callback (
 		println!("Stopped");
 	    }
 	    j::JackTransportRolling => {
-		jack_transport_rolling(numerator, denominator, tempo, nframes, pos);
+		jack_transport_rolling(numerator, denominator, tempo, nframes, pos, dangerous_pointer);
 	    }
 	    j::JackTransportStarting => {
 		println!("Starting");
@@ -57,6 +65,7 @@ pub struct Timekeeper {
     denominator: u8,
     tempo: u8
 }
+
 impl Timekeeper {
     pub fn new(numerator: u8, denominator: u8, tempo: u8) -> Timekeeper {
         Timekeeper { numerator, denominator, tempo}
@@ -66,13 +75,29 @@ impl Timekeeper {
             jack::Client::new("st-conductor", jack::ClientOptions::NO_START_SERVER).unwrap();
 
 
-
+	
 	let cb: j::TimebaseCallback = Some(timebase_callback);
-	let serial_arg = format!("{:?} {:?} {:?}", self.numerator, self.denominator, self.tempo);
-	let arg_cstring = std::ffi::CString::new(serial_arg).unwrap();
-	let arg: *mut ::libc::c_void = arg_cstring.into_raw() as *mut ::libc::c_void;
-
-	unsafe {
+	
+        let (tx, rx) = bounded(1);
+	let sync_controller = st_sync::controller::Controller::new();
+	tokio::task::spawn(sync_controller.start(rx));
+	
+	
+   	let dangerous_pointer: *mut u32 = MaybeUninit::uninit().as_mut_ptr();
+	unsafe { 
+	let serial_arg = format!(
+	    "{:?} {:?} {:?} {:?}",
+	    self.numerator,
+	    self.denominator,
+	    self.tempo,
+	    dangerous_pointer.expose_addr()
+	);
+	
+	    println!("{}", serial_arg);
+	    
+	    let arg_cstring = std::ffi::CString::new(serial_arg).unwrap();
+	    let arg: *mut ::libc::c_void = arg_cstring.into_raw() as *mut ::libc::c_void;
+	    
 	    j::jack_engine_takeover_timebase(client.raw());
     	    j::jack_set_timebase_callback(
 		client.raw(),
@@ -99,6 +124,11 @@ impl Timekeeper {
 	let active_client = client.activate_async((), process).unwrap();
 	loop {
 	    unsafe {
+		let dur = time::Duration::from_millis(100);
+		thread::sleep(dur);
+		if let Some(val) = dangerous_pointer.as_ref() {
+ 	            tx.send(*val);
+		}
    	        let mut pos = MaybeUninit::uninit().as_mut_ptr();
 		j::jack_transport_query(client_pointer, pos);
 	    }
