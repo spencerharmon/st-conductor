@@ -8,9 +8,9 @@ use clap::Parser;
 
 #[derive(Parser)]
 struct Cli {
-    numerator: u8,
-    denominator: u8,
-    tempo: u8,
+    numerator: u16,
+    denominator: u16,
+    tempo: u16,
 }
 
 #[tokio::main]
