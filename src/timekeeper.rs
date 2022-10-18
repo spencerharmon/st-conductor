@@ -3,7 +3,6 @@ use st_sync;
 use ::libc::*;
 use crate::rolling::jack_transport_rolling;
 use std::mem::MaybeUninit;
-use crossbeam_channel::*;
 use std::ptr;
 
 unsafe extern "C" fn timebase_callback (
@@ -77,10 +76,7 @@ impl Timekeeper {
 	
 	let cb: j::TimebaseCallback = Some(timebase_callback);
 	
-        let (tx, rx) = bounded(1);
-	let sync_controller = st_sync::controller::Controller::new(rx);
-	tokio::task::spawn(sync_controller.start());
-	
+	let sync_controller = st_sync::controller::Controller::new();
 	
    	let dangerous_pointer: *mut u64 = MaybeUninit::uninit().as_mut_ptr();
 	unsafe { 
@@ -127,7 +123,7 @@ impl Timekeeper {
 		if let Some(val) = dangerous_pointer.as_ref() {
 		    if *val != last_val {
 			last_val = *val;
-			tx.send(*val);
+			sync_controller.send_next_beat_frame(*val);
 		    }
 		}
 	    }
