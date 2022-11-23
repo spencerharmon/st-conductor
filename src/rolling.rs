@@ -27,6 +27,7 @@ pub unsafe fn jack_transport_rolling(
 
     let this_beat_frame: u64 = absolute_beat as u64 * frames_per_beat as u64;
     let next_beat_frame: u64 = this_beat_frame + frames_per_beat as u64;
+//    println!("{:?}", next_beat_frame);
 
     *dangerous_pointer = next_beat_frame;
     

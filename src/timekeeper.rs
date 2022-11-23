@@ -39,7 +39,7 @@ unsafe extern "C" fn timebase_callback (
 //	(*pos).beat = (*pos).beat; 
 //	(*pos).tick = (*pos).tick; 
 	(*pos).bar = 1;
-	(*pos).beat = 0;
+	(*pos).beat = 1;
 	(*pos).tick = 0;
 	    
     } else {
@@ -116,14 +116,18 @@ impl Timekeeper {
 
 	let active_client = client.activate_async((), process).unwrap();
 	let mut last_val: u64 = 0;
+	let mut skip = true;
 	loop {
 	    unsafe {
    	        let mut pos = MaybeUninit::uninit().as_mut_ptr();
-		j::jack_transport_query(client_pointer, pos);
+		let state = j::jack_transport_query(client_pointer, pos);
 		if let Some(val) = dangerous_pointer.as_ref() {
 		    if *val != last_val {
 			last_val = *val;
-			sync_controller.send_next_beat_frame(*val);
+			if !skip {
+			    sync_controller.send_next_beat_frame(*val);
+			}
+			skip = false;
 		    }
 		}
 	    }
