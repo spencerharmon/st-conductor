@@ -349,7 +349,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "st_conductor"
+name = "st-conductor"
 version = "0.1.0"
 dependencies = [
  "clap",
