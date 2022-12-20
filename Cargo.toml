@@ -1,5 +1,5 @@
 [package]
-name = "st_conductor"
+name = "st-conductor"
 version = "0.1.0"
 edition = "2021"
 
@@ -11,3 +11,6 @@ clap = { version = "3.2.21", features = ["derive"] }
 libc = "0.2"
 st_sync = { version = "0.1", path="../st-sync" }
 tokio = { version = "1.18.2", features = [ "full" ] }
+
+[profile.release]
+opt-level = 2
