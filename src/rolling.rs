@@ -5,7 +5,7 @@ fn get_incremented_bar_beat(bar: i32, beat: i32, beats_per_bar: f32) -> (i32, i3
     if beat_f32 < beats_per_bar {
 	return (bar, beat + 1);
     }
-    (bar + 1, 0)
+    (bar + 1, 1)
 }
 pub unsafe fn jack_transport_rolling(
     numerator: f32,
