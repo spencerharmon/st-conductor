@@ -13,4 +13,4 @@ st_sync = { version = "0.1", path="../st-sync" }
 tokio = { version = "1.18.2", features = [ "full" ] }
 
 [profile.release]
-opt-level = 2
+opt-level = 1
