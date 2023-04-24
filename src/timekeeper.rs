@@ -4,6 +4,8 @@ use ::libc::*;
 use crate::rolling::jack_transport_rolling;
 use std::mem::MaybeUninit;
 use std::ptr;
+use std::{thread, time::Duration};
+use async_std::task;
 
 unsafe extern "C" fn timebase_callback (
     state: j::jack_transport_state_t,
@@ -118,6 +120,7 @@ impl Timekeeper {
 	let mut last_val: u64 = 0;
 	let mut skip = true;
 	loop {
+	    thread::sleep(Duration::from_millis(10));
 	    unsafe {
    	        let mut pos = MaybeUninit::uninit().as_mut_ptr();
 		let state = j::jack_transport_query(client_pointer, pos);

@@ -21,5 +21,4 @@ async fn main() {
 
     let tk = timekeeper::Timekeeper::new(cli.numerator, cli.denominator, cli.tempo);
     tk.start();
-
 }
