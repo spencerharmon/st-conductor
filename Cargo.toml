@@ -9,9 +9,9 @@ edition = "2021"
 jack = { git = "https://github.com/RustAudio/rust-jack", branch = "main" }
 clap = { version = "3.2.21", features = ["derive"] }
 libc = "0.2"
+st_lib = { version = "0.1", path="../st-lib" }
 st_sync = { version = "0.1", path="../st-sync" }
 tokio = { version = "1.18.2", features = [ "full" ] }
-async-std = "1.12"
 
 [profile.release]
 opt-level = 1
