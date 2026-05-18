@@ -104,7 +104,12 @@ impl Timekeeper {
 
 		let cb: j::TimebaseCallback = Some(timebase_callback);
 
-		let sync_controller = st_sync::controller::Controller::new();
+		// st-sync controller. Capacity = beats_per_bar + 1 per the plan:
+		// gives consumers one full bar of lookahead plus the previous beat
+		// for frames_per_beat derivation. Caps the responsiveness window
+		// of any future tempo-change input to roughly one bar.
+		let capacity = (self.numerator as usize) + 1;
+		let sync_controller = st_sync::controller::Controller::with_capacity(capacity);
 
 		// Heap-allocated, atomically-updated next-beat-frame slot, shared
 		// between the JACK timebase callback (producer) and the async poll
