@@ -19,3 +19,6 @@ crossbeam-channel = "0.5"
 
 [profile.release]
 opt-level = 1
+
+[profile.dev]
+debug = "line-tables-only"
