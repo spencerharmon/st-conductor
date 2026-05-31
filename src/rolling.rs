@@ -208,4 +208,108 @@ mod tests {
         assert_eq!(u.beat, 1);
         assert_eq!(u.tick, 0);
     }
+
+    /// Simulate a long run of process cycles and assert that every
+    /// distinct `next_beat_frame` value the timebase callback would push
+    /// into the AtomicU64 is *strictly greater* than the previous one.
+    /// This is the property that guarantees the st-sync `BeatPublisher`
+    /// will never panic on real data from this conductor.
+    #[test]
+    fn next_beat_frame_sequence_is_strictly_monotonic() {
+        const FRAME_RATE: u32 = 48_000;
+        const TEMPO: f64 = 120.0;
+        const BEATS_PER_BAR: f32 = 4.0;
+        const NFRAMES: u32 = 1024;
+        const TOTAL_CYCLES: u32 = 4000; // ~85 seconds at 48kHz/1024.
+
+        let mut bar = 1i32;
+        let mut beat = 1i32;
+        let mut tick = 0i32;
+        let mut current_frame: u32 = 0;
+        let mut last_unique: u64 = 0;
+        let mut distinct_beats = 0u64;
+
+        for _ in 0..TOTAL_CYCLES {
+            let u = compute_rolling_update_at(
+                NFRAMES,
+                FRAME_RATE,
+                current_frame,
+                bar,
+                beat,
+                tick,
+                BEATS_PER_BAR,
+                TEMPO,
+            );
+            if u.next_beat_frame != last_unique {
+                assert!(
+                    u.next_beat_frame > last_unique,
+                    "next_beat_frame regressed: was {}, now {}",
+                    last_unique,
+                    u.next_beat_frame
+                );
+                last_unique = u.next_beat_frame;
+                distinct_beats += 1;
+            }
+            bar = u.bar;
+            beat = u.beat;
+            tick = u.tick;
+            current_frame = u.end_frame as u32;
+        }
+
+        // Sanity: with the *2 frames_per_beat convention (see
+        // st_lib::beat_math), at 120 BPM/48kHz a beat is 48000 frames,
+        // so 4000 * 1024-frame cycles ≈ 85 beats. Just check the
+        // simulation was meaningful.
+        assert!(
+            distinct_beats > 50,
+            "expected many distinct beats in the simulation, got {}",
+            distinct_beats
+        );
+    }
+
+    /// Same property at a fast tempo and small buffer: stress the boundary
+    /// crossings, ensure monotonicity still holds when cycles often
+    /// straddle multiple beats.
+    #[test]
+    fn next_beat_frame_monotonic_at_fast_tempo() {
+        const FRAME_RATE: u32 = 48_000;
+        const TEMPO: f64 = 240.0; // 4 Hz, 12000 fpb
+        const BEATS_PER_BAR: f32 = 7.0; // odd meter
+        const NFRAMES: u32 = 256;
+        const TOTAL_CYCLES: u32 = 8000;
+
+        let mut bar = 1i32;
+        let mut beat = 1i32;
+        let mut tick = 0i32;
+        let mut current_frame: u32 = 0;
+        let mut last_unique: u64 = 0;
+
+        for _ in 0..TOTAL_CYCLES {
+            let u = compute_rolling_update_at(
+                NFRAMES,
+                FRAME_RATE,
+                current_frame,
+                bar,
+                beat,
+                tick,
+                BEATS_PER_BAR,
+                TEMPO,
+            );
+            if u.next_beat_frame != last_unique {
+                assert!(
+                    u.next_beat_frame > last_unique,
+                    "regressed at tempo={} meter={}: {} -> {}",
+                    TEMPO,
+                    BEATS_PER_BAR,
+                    last_unique,
+                    u.next_beat_frame
+                );
+                last_unique = u.next_beat_frame;
+            }
+            bar = u.bar;
+            beat = u.beat;
+            tick = u.tick;
+            current_frame = u.end_frame as u32;
+        }
+    }
 }
